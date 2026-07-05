@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RTOS Simulator — Educational Embedded Systems Tool</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* index-only overrides */
+    .arch-diagram {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      font-family: var(--font-mono);
+      font-size: .82rem;
+      line-height: 1.8;
+      color: var(--text-sub);
+      overflow-x: auto;
+    }
+    .arch-diagram .box {
+      display: inline-block;
+      padding: 4px 10px;
+      border: 1px solid;
+      border-radius: 4px;
+    }
+    .box-app   { border-color: var(--cyan);   color: var(--cyan); }
+    .box-kern  { border-color: var(--green);  color: var(--green); }
+    .box-hw    { border-color: var(--orange); color: var(--orange); }
+    .box-sec   { border-color: var(--red);    color: var(--red); }
+
+    .quick-ref {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .qref-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .qref-card h4 {
+      font-family: var(--font-mono);
+      color: var(--cyan);
+      margin-bottom: 10px;
+      font-size: .95rem;
+    }
+    .qref-card ul {
+      list-style: none;
+      color: var(--text-sub);
+      font-size: .85rem;
+      line-height: 1.7;
+    }
+    .qref-card li::before { content: '▸ '; color: var(--cyan); }
+  </style>
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-brand">RTOS<span>Sim</span></div>
+  <a href="index.html"     class="nav-link active">🏠 Home</a>
+  <a href="scheduler.html" class="nav-link">📅 Scheduler</a>
+  <a href="wcet.html"      class="nav-link">⏱ WCET</a>
+  <a href="security.html"  class="nav-link">🔒 Security</a>
+</nav>
+
+<!-- ── Hero ──────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-badge">🎓 Educational RTOS Simulator</div>
+  <h1>Learn <span>Real-Time Operating Systems</span><br>by Simulation</h1>
+  <p>
+    An interactive, browser-based RTOS simulator for embedded-systems students.
+    Explore task scheduling, worst-case timing, and real-world security vulnerabilities —
+    all with live visualisations and step-by-step explanations.
+  </p>
+  <div class="hero-buttons">
+    <a href="scheduler.html" class="btn btn-primary" style="font-size:1rem;padding:12px 28px">
+      📅 Open Scheduler
+    </a>
+    <a href="wcet.html" class="btn btn-outline" style="font-size:1rem;padding:12px 28px">
+      ⏱ WCET Explorer
+    </a>
+    <a href="security.html" class="btn btn-outline" style="font-size:1rem;padding:12px 28px">
+      🔒 Security Lab
+    </a>
+  </div>
+</div>
+
+<!-- ── Feature cards ─────────────────────────────────────── -->
+<div class="page" style="padding-top:0">
+
+  <div class="feature-grid">
+    <a href="scheduler.html" class="feature-card">
+      <div class="feature-icon">📅</div>
+      <div class="feature-title">RMS / EDF Scheduling Timeline</div>
+      <div class="feature-desc">
+        Add tasks with period, WCET, and name. Instantly visualise the preemptive
+        scheduling Gantt chart. Switch between Rate Monotonic and Earliest Deadline
+        First. Deadline misses are highlighted in red.
+      </div>
+      <div class="concept-list">
+        <span class="concept-pill">Hyperperiod</span>
+        <span class="concept-pill">Preemption</span>
+        <span class="concept-pill">Utilisation</span>
+        <span class="concept-pill">Liu &amp; Layland</span>
+        <span class="concept-pill">Response Time</span>
+      </div>
+    </a>
+
+    <a href="wcet.html" class="feature-card">
+      <div class="feature-icon">⏱️</div>
+      <div class="feature-title">WCET Interference Explorer</div>
+      <div class="feature-desc">
+        Explore how higher-priority tasks inject interference into lower-priority
+        task execution. Stacked bar charts show WCET, interference, and blocking
+        time. Fixed-point response-time analysis for every task.
+      </div>
+      <div class="concept-list">
+        <span class="concept-pill">Interference</span>
+        <span class="concept-pill">Blocking</span>
+        <span class="concept-pill">WCRT</span>
+        <span class="concept-pill">Fixed-Point Analysis</span>
+        <span class="concept-pill">Feasibility</span>
+      </div>
+    </a>
+
+    <a href="security.html" class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-title">Security Vulnerabilities &amp; Fixes</div>
+      <div class="feature-desc">
+        Step through four classic RTOS security issues: priority inversion,
+        stack overflow, race conditions, and integer overflow in timers.
+        Each scenario shows vulnerable vs. fixed code and an animated event trace.
+      </div>
+      <div class="concept-list">
+        <span class="concept-pill">Priority Inversion</span>
+        <span class="concept-pill">Stack Canary</span>
+        <span class="concept-pill">Mutex</span>
+        <span class="concept-pill">PIP</span>
+        <span class="concept-pill">CWE</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- ── RTOS Architecture Overview ─────────────────────── -->
+  <div style="margin-top: 48px">
+    <h2 class="section-title">RTOS Architecture</h2>
+    <div class="arch-diagram">
+<pre style="background:none;border:none;padding:0;font-family:inherit;font-size:inherit;line-height:inherit;color:inherit">
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║                    APPLICATION LAYER                             ║
+  ║  <span class="box box-app">Task τ₁ (sensor)</span>  <span class="box box-app">Task τ₂ (control)</span>  <span class="box box-app">Task τ₃ (comms)</span>  <span class="box box-sec">⚠ Security</span>  ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║                      RTOS KERNEL                                 ║
+  ║  <span class="box box-kern">Scheduler (RMS/EDF)</span>   <span class="box box-kern">IPC (mutex, semaphore)</span>   <span class="box box-kern">Timer</span>   ║
+  ║  <span class="box box-kern">Task Control Blocks</span>  <span class="box box-kern">Memory Manager</span>  <span class="box box-kern">Interrupt Handler</span>  ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║                     HARDWARE LAYER                               ║
+  ║  <span class="box box-hw">CPU (ARM Cortex-M)</span>  <span class="box box-hw">System Tick Timer</span>  <span class="box box-hw">MPU</span>  <span class="box box-hw">Peripherals</span>  ║
+  ╚══════════════════════════════════════════════════════════════════╝
+</pre>
+    </div>
+  </div>
+
+  <!-- ── Quick Reference ────────────────────────────────── -->
+  <div style="margin-top: 48px">
+    <h2 class="section-title">Quick Reference</h2>
+    <div class="quick-ref">
+      <div class="qref-card">
+        <h4>RMS — Rate Monotonic Scheduling</h4>
+        <ul>
+          <li>Static priority based on period</li>
+          <li>Shorter period → higher priority</li>
+          <li>Optimal among fixed-priority algorithms</li>
+          <li>Schedulability: U ≤ n(2^(1/n)−1)</li>
+          <li>At n→∞, bound approaches ln(2) ≈ 69%</li>
+        </ul>
+      </div>
+      <div class="qref-card">
+        <h4>EDF — Earliest Deadline First</h4>
+        <ul>
+          <li>Dynamic priority based on absolute deadline</li>
+          <li>Task with nearest deadline runs first</li>
+          <li>Optimal for preemptive uniprocessor</li>
+          <li>Schedulability: U ≤ 1 (100%)</li>
+          <li>More complex to implement than RMS</li>
+        </ul>
+      </div>
+      <div class="qref-card">
+        <h4>WCET Response Time Analysis</h4>
+        <ul>
+          <li>R⁽⁰⁾ = C (own WCET)</li>
+          <li>R⁽ᵏ⁺¹⁾ = C + Σⱼ∈hp ⌈R/Tⱼ⌉×Cⱼ</li>
+          <li>Iterate until R⁽ᵏ⁺¹⁾ = R⁽ᵏ⁾</li>
+          <li>Task feasible if R ≤ T</li>
+          <li>Accounts for all preemptions by hp tasks</li>
+        </ul>
+      </div>
+      <div class="qref-card">
+        <h4>Key Security Threats</h4>
+        <ul>
+          <li>Priority inversion → PIP / PCP</li>
+          <li>Stack overflow → canary + MPU</li>
+          <li>Race conditions → mutex / semaphore</li>
+          <li>Timer overflow → use uint32_t</li>
+          <li>IPC buffer overflow → bounds checking</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer>
+  RTOS Educational Simulator &nbsp;|&nbsp; RMS · EDF · WCET · Security &nbsp;|&nbsp;
+  Open source — for teaching embedded real-time systems
+</footer>
+
+</body>
+</html>
