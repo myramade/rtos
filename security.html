@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Lab — Vulnerabilities &amp; Fixes | RTOS Simulator</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">RTOS<span>Sim</span></div>
+  <a href="index.html"     class="nav-link">🏠 Home</a>
+  <a href="scheduler.html" class="nav-link">📅 Scheduler</a>
+  <a href="wcet.html"      class="nav-link">⏱ WCET</a>
+  <a href="security.html"  class="nav-link active">🔒 Security</a>
+</nav>
+
+<div class="page">
+  <h1 class="section-title" style="font-size:1.4rem;margin-bottom:4px">
+    RTOS Security Lab
+  </h1>
+  <p style="color:var(--text-sub);font-size:.9rem;margin-bottom:8px">
+    Explore four classic embedded RTOS security vulnerabilities. Each card shows
+    the root cause, vulnerable and fixed code side-by-side, and an interactive
+    animated simulation of the attack and its mitigation.
+  </p>
+
+  <div class="info-box warn" style="margin-bottom:24px">
+    <span class="icon">⚠️</span>
+    <div>
+      These examples represent <strong>real-world vulnerabilities</strong> found in
+      production RTOS deployments. Understanding them is essential for building
+      safe embedded systems in automotive, medical, aerospace, and IoT domains.
+    </div>
+  </div>
+
+  <!-- Vulnerability cards are injected here by security-ui.js -->
+  <div id="vuln-cards"></div>
+
+  <!-- ── RTOS Security Principles ─────────────────────────── -->
+  <div style="margin-top:48px">
+    <h2 class="section-title">RTOS Security Design Principles</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+
+      <div class="card">
+        <div style="font-size:1.4rem;margin-bottom:10px">🏰</div>
+        <h3 style="color:var(--cyan);font-family:var(--font-mono);margin-bottom:8px">Least Privilege</h3>
+        <p style="color:var(--text-sub);font-size:.87rem;line-height:1.6">
+          Each task should have only the permissions it needs. Use the MPU (Memory
+          Protection Unit) to restrict task access to its own stack and data regions.
+          Prevent tasks from accidentally (or maliciously) accessing other task memory.
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="font-size:1.4rem;margin-bottom:10px">🔏</div>
+        <h3 style="color:var(--green);font-family:var(--font-mono);margin-bottom:8px">Synchronisation</h3>
+        <p style="color:var(--text-sub);font-size:.87rem;line-height:1.6">
+          Protect all shared data with appropriate synchronisation primitives.
+          Use mutexes (not binary semaphores) where priority inheritance is needed.
+          Keep critical sections as short as possible to minimise blocking time.
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="font-size:1.4rem;margin-bottom:10px">📏</div>
+        <h3 style="color:var(--orange);font-family:var(--font-mono);margin-bottom:8px">Bounds Checking</h3>
+        <p style="color:var(--text-sub);font-size:.87rem;line-height:1.6">
+          Validate all input sizes before writing to buffers, queues, or stacks.
+          Use static analysis (e.g., MISRA-C, PC-Lint) and runtime checks (stack
+          canaries, watchdog timers) to catch violations early.
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="font-size:1.4rem;margin-bottom:10px">⏰</div>
+        <h3 style="color:var(--purple);font-family:var(--font-mono);margin-bottom:8px">Timing Safety</h3>
+        <p style="color:var(--text-sub);font-size:.87rem;line-height:1.6">
+          Use sufficiently wide integer types (uint32_t or larger) for all timing
+          variables. Always perform wrap-around-safe arithmetic using unsigned
+          subtraction. Verify WCET with static analysis tools before deployment.
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="font-size:1.4rem;margin-bottom:10px">👁️</div>
+        <h3 style="color:var(--yellow);font-family:var(--font-mono);margin-bottom:8px">Monitoring</h3>
+        <p style="color:var(--text-sub);font-size:.87rem;line-height:1.6">
+          Instrument the system with a hardware watchdog, stack high-watermark
+          checks, and deadline-miss hooks. Log anomalies to non-volatile storage
+          for post-mortem analysis. Never silently swallow errors.
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="font-size:1.4rem;margin-bottom:10px">🧪</div>
+        <h3 style="color:var(--cyan);font-family:var(--font-mono);margin-bottom:8px">Testing</h3>
+        <p style="color:var(--text-sub);font-size:.87rem;line-height:1.6">
+          Test concurrent scenarios deliberately: inject task delays, flip
+          scheduling order, stress test with maximum load. Use formal methods
+          (model checking, timing analysis tools) for safety-critical systems.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CWE / References ──────────────────────────────────── -->
+  <div style="margin-top:40px">
+    <h2 class="section-title">References &amp; Further Reading</h2>
+    <div class="card">
+      <table class="analysis-table">
+        <thead>
+          <tr>
+            <th>Vulnerability</th>
+            <th>CWE ID</th>
+            <th>Real-World Example</th>
+            <th>Mitigation Standard</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Priority Inversion</td>
+            <td><span class="pill fail">CWE-833</span></td>
+            <td>Mars Pathfinder (1997)</td>
+            <td>POSIX PTHREAD_PRIO_INHERIT / Priority Ceiling</td>
+          </tr>
+          <tr>
+            <td>Stack Overflow</td>
+            <td><span class="pill fail">CWE-121</span></td>
+            <td>Numerous embedded system crashes</td>
+            <td>Stack canaries, MPU guard regions, FreeRTOS uxTaskGetStackHighWaterMark</td>
+          </tr>
+          <tr>
+            <td>Race Condition</td>
+            <td><span class="pill warn">CWE-362</span></td>
+            <td>Therac-25 radiation therapy (1985–1987)</td>
+            <td>Mutex-protected critical sections, C11 _Atomic, MISRA-C Rule 15.5</td>
+          </tr>
+          <tr>
+            <td>Integer Overflow (Timer)</td>
+            <td><span class="pill warn">CWE-190</span></td>
+            <td>Y2K, Boeing 787 power reset (2015)</td>
+            <td>MISRA-C Rule 10.4, CERT C INT30-C, use uint32_t arithmetic</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  RTOS Educational Simulator &nbsp;|&nbsp; RMS · EDF · WCET · Security
+</footer>
+
+<script src="js/core.js"></script>
+<script src="js/security-ui.js"></script>
+</body>
+</html>

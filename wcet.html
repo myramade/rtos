@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WCET Interference Explorer | RTOS Simulator</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    #wcet-error {
+      display: none;
+      background: rgba(255,69,58,.12);
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: .85rem;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">RTOS<span>Sim</span></div>
+  <a href="index.html"     class="nav-link">🏠 Home</a>
+  <a href="scheduler.html" class="nav-link">📅 Scheduler</a>
+  <a href="wcet.html"      class="nav-link active">⏱ WCET</a>
+  <a href="security.html"  class="nav-link">🔒 Security</a>
+</nav>
+
+<div class="page">
+  <h1 class="section-title" style="font-size:1.4rem;margin-bottom:4px">
+    WCET Interference Explorer
+  </h1>
+  <p style="color:var(--text-sub);font-size:.9rem;margin-bottom:24px">
+    Analyse how higher-priority tasks inject interference into lower-priority task
+    execution and compute worst-case response times using fixed-point analysis.
+  </p>
+
+  <div class="two-col">
+
+    <!-- ── Left: Task configuration ───────────────────────── -->
+    <div>
+      <div class="card">
+        <div class="section-title" style="font-size:1rem;margin-bottom:12px">Add Task</div>
+        <div id="wcet-error"></div>
+
+        <div class="form-group">
+          <label>Task Name</label>
+          <input type="text" id="winp-name" placeholder="e.g. τ₄" maxlength="12">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Period (T)</label>
+            <input type="number" id="winp-period" placeholder="e.g. 20" min="1" max="200">
+          </div>
+          <div class="form-group">
+            <label>WCET (C) ≤ T</label>
+            <input type="number" id="winp-wcet" placeholder="e.g. 3" min="1" max="200">
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btn-add-wtask">＋ Add Task</button>
+          <button class="btn btn-outline"  id="btn-reset-demo">↺ Reset Demo</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="section-title" style="font-size:1rem;margin-bottom:12px">Task Set</div>
+        <div id="wcet-task-list" class="task-list"></div>
+      </div>
+
+      <!-- Bar chart legend -->
+      <div class="card" style="margin-top:16px">
+        <div class="section-title" style="font-size:.9rem;margin-bottom:10px">Bar Chart Legend</div>
+        <div class="legend" style="flex-direction:column;gap:8px;font-size:.83rem">
+          <div class="legend-item">
+            <span class="legend-block" style="background:var(--cyan)"></span>
+            Own WCET (C) — base execution time
+          </div>
+          <div class="legend-item">
+            <span class="legend-block" style="background:var(--orange)"></span>
+            Interference (I) — time stolen by higher-priority tasks
+          </div>
+          <div class="legend-item">
+            <span class="legend-block" style="background:var(--purple)"></span>
+            Blocking (B) — worst-case priority-inversion blocking
+          </div>
+          <div class="legend-item">
+            <span class="legend-block" style="background:var(--border)"></span>
+            Remaining slack (T − WCRT)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Right: Analysis results ─────────────────────────── -->
+    <div>
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-badge" id="wstat-util-badge">
+          <div class="stat-value" id="wstat-util">—</div>
+          <div class="stat-label">Utilisation</div>
+        </div>
+        <div class="stat-badge" id="wstat-bound-badge">
+          <div class="stat-value" id="wstat-bound">—</div>
+          <div class="stat-label">RMS Bound</div>
+        </div>
+        <div class="stat-badge" id="wstat-misses-badge">
+          <div class="stat-value" id="wstat-misses">—</div>
+          <div class="stat-label">Infeasible Tasks</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="font-size:.8rem;color:var(--text-sub);margin-bottom:4px;font-family:var(--font-mono)">CPU Utilisation</div>
+        <div class="util-bar-wrap">
+          <div class="util-bar ok" id="wutil-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- WCET stacked bars -->
+      <div class="card">
+        <div class="section-title" style="font-size:.95rem;margin-bottom:14px">
+          WCET Breakdown (bars scaled to task period)
+        </div>
+        <div id="wcet-bars">
+          <p style="color:var(--text-muted);font-size:.88rem">Add tasks to see analysis.</p>
+        </div>
+      </div>
+
+      <!-- Analysis table -->
+      <div class="card" style="margin-top:16px">
+        <div class="section-title" style="font-size:.95rem;margin-bottom:12px">
+          Response Time Summary
+        </div>
+        <div style="overflow-x:auto">
+          <table class="analysis-table">
+            <thead>
+              <tr>
+                <th>P#</th>
+                <th>Task</th>
+                <th>T</th>
+                <th>C</th>
+                <th style="color:var(--orange)">I (Interference)</th>
+                <th style="color:var(--purple)">B (Blocking)</th>
+                <th>WCRT = C+I+B</th>
+                <th>RTA R</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="wcet-tbody">
+              <tr><td colspan="9" style="color:var(--text-muted);text-align:center">No tasks.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Results area -->
+      <div id="wcet-results" style="margin-top:0"></div>
+    </div>
+  </div>
+
+  <!-- ── Per-task interference breakdown ──────────────────── -->
+  <div style="margin-top:32px">
+    <h2 class="section-title">Interference Breakdown per Task</h2>
+    <div id="interference-breakdown">
+      <p style="color:var(--text-muted)">Add tasks to see detailed interference analysis.</p>
+    </div>
+  </div>
+
+  <!-- ── Theory ──────────────────────────────────────────── -->
+  <div style="margin-top:40px">
+    <h2 class="section-title">Theory: WCET Response-Time Analysis</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+      <div class="card">
+        <h3 style="color:var(--cyan);font-family:var(--font-mono);margin-bottom:10px">Fixed-Point Iteration</h3>
+        <p style="color:var(--text-sub);font-size:.87rem;line-height:1.65">
+          The worst-case response time of task τᵢ is computed iteratively:
+        </p>
+        <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:14px;margin:12px 0;font-family:var(--font-mono);font-size:.85rem">
+          R⁽⁰⁾ = Cᵢ<br><br>
+          R⁽ᵏ⁺¹⁾ = Cᵢ + Σⱼ∈hp(i) ⌈R⁽ᵏ⁾/Tⱼ⌉ × Cⱼ
+        </div>
+        <p style="color:var(--text-sub);font-size:.87rem;line-height:1.65">
+          where <em>hp(i)</em> is the set of tasks with higher priority than τᵢ.
+          Iteration stops when R⁽ᵏ⁺¹⁾ = R⁽ᵏ⁾ (convergence). If R exceeds Tᵢ,
+          the task is infeasible under RMS.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 style="color:var(--orange);font-family:var(--font-mono);margin-bottom:10px">Interference &amp; Blocking</h3>
+        <p style="color:var(--text-sub);font-size:.87rem;line-height:1.65">
+          <strong style="color:var(--orange)">Interference I(τᵢ, τⱼ)</strong> is the time stolen
+          from τᵢ's period by higher-priority task τⱼ:
+        </p>
+        <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:14px;margin:12px 0;font-family:var(--font-mono);font-size:.85rem">
+          I(τᵢ, τⱼ) = ⌈Tᵢ/Tⱼ⌉ × Cⱼ
+        </div>
+        <p style="color:var(--text-sub);font-size:.87rem;line-height:1.65">
+          <strong style="color:var(--purple)">Blocking B(τᵢ)</strong> is the maximum time τᵢ
+          can be delayed by a single lower-priority task holding a shared resource
+          (priority-inversion blocking). Without Priority Ceiling Protocol, B = max Cⱼ over
+          all lower-priority tasks sharing resources with τᵢ.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  RTOS Educational Simulator &nbsp;|&nbsp; RMS · EDF · WCET · Security
+</footer>
+
+<script src="js/core.js"></script>
+<script src="js/wcet-ui.js"></script>
+</body>
+</html>

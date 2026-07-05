@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scheduler — RMS / EDF Timeline | RTOS Simulator</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .legend-block {
+      display: inline-block;
+      width: 16px; height: 10px;
+      border-radius: 2px;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+    #error-msg {
+      display: none;
+      background: rgba(255,69,58,.12);
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: .85rem;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">RTOS<span>Sim</span></div>
+  <a href="index.html"     class="nav-link">🏠 Home</a>
+  <a href="scheduler.html" class="nav-link active">📅 Scheduler</a>
+  <a href="wcet.html"      class="nav-link">⏱ WCET</a>
+  <a href="security.html"  class="nav-link">🔒 Security</a>
+</nav>
+
+<div class="page">
+  <h1 class="section-title" style="font-size:1.4rem;margin-bottom:4px">
+    RMS / EDF Scheduling Timeline
+  </h1>
+  <p style="color:var(--text-sub);font-size:.9rem;margin-bottom:24px">
+    Configure tasks, choose an algorithm, and visualise the preemptive scheduling
+    Gantt chart over one hyperperiod.
+  </p>
+
+  <div class="two-col">
+
+    <!-- ── Left: Task configuration ───────────────────────── -->
+    <div>
+      <!-- Algorithm selector -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="section-title" style="font-size:1rem;margin-bottom:12px">Algorithm</div>
+        <div class="tab-group" style="margin-bottom:0">
+          <button class="tab-btn active" id="btn-rms" onclick="setAlgorithm('RMS')">
+            RMS — Rate Monotonic
+          </button>
+          <button class="tab-btn" id="btn-edf" onclick="setAlgorithm('EDF')">
+            EDF — Earliest Deadline First
+          </button>
+        </div>
+
+        <div class="info-box info" style="margin-top:12px">
+          <span class="icon">ℹ️</span>
+          <div id="alg-info">
+            <strong>RMS:</strong> Static priorities — shorter period = higher priority.
+            Schedulability: U ≤ n(2^(1/n)−1).
+          </div>
+        </div>
+      </div>
+
+      <!-- Add task form -->
+      <div class="card">
+        <div class="section-title" style="font-size:1rem;margin-bottom:12px">Add Task</div>
+
+        <div id="error-msg"></div>
+
+        <div class="form-group">
+          <label>Task Name</label>
+          <input type="text" id="inp-name" placeholder="e.g. τ₄" maxlength="12">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Period (T)</label>
+            <input type="number" id="inp-period" placeholder="e.g. 8" min="1" max="200">
+          </div>
+          <div class="form-group">
+            <label>WCET (C) ≤ T</label>
+            <input type="number" id="inp-wcet" placeholder="e.g. 2" min="1" max="200">
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btn-add-task">＋ Add Task</button>
+          <button class="btn btn-outline" id="btn-load-demo">↺ Load Demo</button>
+        </div>
+      </div>
+
+      <!-- Task list -->
+      <div class="card" style="margin-top:16px">
+        <div class="section-title" style="font-size:1rem;margin-bottom:12px">
+          Task Set
+        </div>
+        <div id="task-list" class="task-list"></div>
+      </div>
+
+      <!-- How to read the chart -->
+      <div class="card" style="margin-top:16px">
+        <div class="section-title" style="font-size:.9rem;margin-bottom:10px">Legend</div>
+        <div class="legend" style="flex-direction:column;gap:8px">
+          <div class="legend-item">
+            <span class="legend-block" style="background:var(--cyan)"></span>
+            Coloured block — task executing
+          </div>
+          <div class="legend-item">
+            <span style="color:var(--green);font-size:1rem;margin-right:6px">↑</span>
+            Green arrow — task release (new period)
+          </div>
+          <div class="legend-item">
+            <span style="color:var(--orange);font-size:1rem;margin-right:6px">↓</span>
+            Orange arrow — task deadline
+          </div>
+          <div class="legend-item">
+            <span style="color:var(--red);font-size:1rem;margin-right:6px">✗</span>
+            Red MISS label — deadline missed
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Right: Timeline and stats ──────────────────────── -->
+    <div>
+      <!-- Stats row -->
+      <div class="stats-row">
+        <div class="stat-badge" id="badge-status">
+          <div class="stat-value" id="stat-status">—</div>
+          <div class="stat-label">Feasibility</div>
+        </div>
+        <div class="stat-badge">
+          <div class="stat-value" id="stat-util">—</div>
+          <div class="stat-label">Utilisation</div>
+        </div>
+        <div class="stat-badge">
+          <div class="stat-value" id="stat-bound">—</div>
+          <div class="stat-label">Bound</div>
+        </div>
+        <div class="stat-badge">
+          <div class="stat-value" id="stat-misses">—</div>
+          <div class="stat-label">Deadline Misses</div>
+        </div>
+      </div>
+
+      <!-- Utilisation bar -->
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-sub);margin-bottom:4px;font-family:var(--font-mono)">
+          <span>CPU Utilisation</span>
+          <span>Hyperperiod: <strong id="lbl-hyperperiod">—</strong> ticks &nbsp;|&nbsp; Idle: <strong id="lbl-idle">—</strong> ticks</span>
+        </div>
+        <div class="util-bar-wrap">
+          <div class="util-bar ok" id="util-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Scheduling timeline canvas -->
+      <div class="card" style="padding:12px">
+        <div class="section-title" style="font-size:.95rem;margin-bottom:10px">Scheduling Timeline</div>
+        <div class="canvas-wrap">
+          <canvas id="timeline-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Response time analysis table -->
+      <div class="card" style="margin-top:16px">
+        <div class="section-title" style="font-size:.95rem;margin-bottom:12px">
+          Worst-Case Response Time Analysis
+          <span style="font-size:.78rem;color:var(--text-muted);font-weight:400;font-family:sans-serif">
+            (RMS priority order)
+          </span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="analysis-table">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Task</th>
+                <th>Period (T)</th>
+                <th>WCET (C)</th>
+                <th>Interference (I)</th>
+                <th>Response Time (R)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="rta-tbody">
+              <tr><td colspan="7" style="color:var(--text-muted);text-align:center">No tasks added yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="info-box info" style="margin-top:14px">
+          <span class="icon">📐</span>
+          <div>
+            <strong>Formula:</strong>&nbsp;
+            R<sub>i</sub><sup>(k+1)</sup> = C<sub>i</sub> + Σ<sub>j∈hp(i)</sub> ⌈R<sub>i</sub><sup>(k)</sup>/T<sub>j</sub>⌉ × C<sub>j</sub>
+            &nbsp;— iterate until convergence. Task feasible if R<sub>i</sub> ≤ T<sub>i</sub>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Algorithm explanation ─────────────────────────────── -->
+  <div style="margin-top:32px">
+    <h2 class="section-title">How RMS and EDF Work</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="card">
+        <h3 style="color:var(--cyan);font-family:var(--font-mono);margin-bottom:10px">Rate Monotonic Scheduling</h3>
+        <p style="color:var(--text-sub);font-size:.88rem;line-height:1.65">
+          RMS assigns <strong>static priorities</strong> inversely proportional to task period.
+          The task with the shortest period always has the highest priority and can preempt any
+          longer-period task at any time.<br><br>
+          The Liu &amp; Layland utilisation bound guarantees that any task set with
+          U ≤ n(2^(1/n)−1) is schedulable under RMS. At n = 1 the bound is 100%; as n grows
+          it converges to ln 2 ≈ 69.3%.
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--purple);font-family:var(--font-mono);margin-bottom:10px">Earliest Deadline First</h3>
+        <p style="color:var(--text-sub);font-size:.88rem;line-height:1.65">
+          EDF assigns <strong>dynamic priorities</strong>: at every scheduling point the ready
+          task with the nearest absolute deadline runs first. If a new task releases with an
+          earlier deadline than the currently running task, it immediately preempts it.<br><br>
+          EDF is <em>optimal</em> for preemptive uniprocessor scheduling: any task set with
+          U ≤ 1 is feasible under EDF. The cost is higher runtime overhead and more complex
+          implementation compared to RMS.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  RTOS Educational Simulator &nbsp;|&nbsp; RMS · EDF · WCET · Security
+</footer>
+
+<script src="js/core.js"></script>
+<script src="js/scheduler-ui.js"></script>
+<script>
+  // Update algorithm info text when tab changes
+  const algInfo = {
+    RMS: '<strong>RMS:</strong> Static priorities — shorter period = higher priority. Schedulability: U ≤ n(2<sup>1/n</sup>−1).',
+    EDF: '<strong>EDF:</strong> Dynamic priorities — nearest absolute deadline runs first. Schedulability: U ≤ 1 (100%).',
+  };
+  const origSetAlgorithm = setAlgorithm;
+  function setAlgorithm(alg) {
+    origSetAlgorithm(alg);
+    document.getElementById('alg-info').innerHTML = algInfo[alg];
+  }
+</script>
+</body>
+</html>
