@@ -1,6 +1,5 @@
-code
-Copy
-c
+
+```c
 #include 
 #include 
 #include 
@@ -48,7 +47,7 @@ int main() {
 }
 
 
-Note that this is a simplified example and should not be used in production without additional security measures and testing.
+> Note that this is a simplified example and should not be used in production without additional security measures and testing.
 ### Security Analysis
 The secure communication protocol is designed to provide confidentiality, integrity, authentication, authorization, and availability. The protocol uses encryption, authentication, and authorization mechanisms to protect data and ensure the security of the RTOS-based system.
 The protocol is resistant to common attacks such as:
