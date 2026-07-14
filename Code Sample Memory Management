@@ -1,0 +1,35 @@
+c
+#include 
+#include 
+#include 
+// Secure memory allocation function
+void  secure_malloc(size_t size) {
+    void  ptr = malloc(size);
+    if (ptr == NULL) {
+        // Handle memory allocation error
+    }
+    return ptr;
+}
+// Secure memory deallocation function
+void secure_free(void  ptr) {
+    free(ptr);
+}
+int main() {
+    // Allocate memory securely
+    char  buffer = secure_malloc(1024);
+    if (buffer == NULL) {
+        // Handle memory allocation error
+    }
+    // Initialize memory
+    memset_s(buffer, 1024, 0, 1024);
+    // Use memory safely
+    strcpy_s(buffer, 1024, 'Hello, World!');
+    printf('%s
+| buffer);
+    // Deallocate memory securely
+    secure_free(buffer);
+    return 0;
+}
+
+
+In this example, the `secure_malloc` function checks the return value of `malloc` to ensure memory allocation was successful, and the `secure_free` function releases allocated memory when no longer needed. The `memset_s` function is used to initialize memory, and the `strcpy_s` function is used to prevent buffer overflows.
