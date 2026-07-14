@@ -7,7 +7,7 @@ Example Use Case: Secure Boot in Automotive Systems
 
 
 
-c
+```c
 // Import necessary libraries
 #include 
 #include 
