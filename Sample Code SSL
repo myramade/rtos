@@ -1,0 +1,24 @@
+c
+#include 
+#include 
+// Initialize SSL context
+SSL_CTX  ctx = SSL_CTX_new(TLS_client_method());
+SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+// Create SSL object
+SSL  ssl = SSL_new(ctx);
+// Set up SSL connection
+ SSL_set_connect_state(ssl);
+ SSL_set_fd(ssl, sockfd);
+// Perform SSL handshake
+if (SSL_connect(ssl) <= 0) {
+    // Handle handshake error
+}
+// Send encrypted data
+SSL_write(ssl, 'Hello, server!| 13);
+// Receive encrypted data
+char buffer[1024];
+SSL_read(ssl, buffer, 1024);
+
+
+In this example, we create an SSL context, set up an SSL object, and perform an SSL handshake with a server. We then send and receive encrypted data using the `SSL_write` and `SSL_read` functions.
+By following these basics of SSL protocol in RTOS, you can ensure secure communication between devices in your real-time system.
