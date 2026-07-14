@@ -1,4 +1,4 @@
-c
+```c
 #include 
 #include 
 #include 
@@ -32,4 +32,4 @@ int main() {
 }
 
 
-In this example, the `secure_malloc` function checks the return value of `malloc` to ensure memory allocation was successful, and the `secure_free` function releases allocated memory when no longer needed. The `memset_s` function is used to initialize memory, and the `strcpy_s` function is used to prevent buffer overflows.
+> In this example, the `secure_malloc` function checks the return value of `malloc` to ensure memory allocation was successful, and the `secure_free` function releases allocated memory when no longer needed. The `memset_s` function is used to initialize memory, and the `strcpy_s` function is used to prevent buffer overflows.
